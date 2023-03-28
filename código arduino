@@ -1,0 +1,111 @@
+
+#include <LiquidCrystal.h>
+
+LiquidCrystal lcd(5, 6, 7, 8, 9, 10, 11); //(RS,RW, E, D4,D5, D6, D7)
+int DIR_PIN_1 = 2;
+int DIR_PIN_2 = 4;
+int SPEED_PIN = 3;
+int ldrConcentracionPin = A0;
+int ldrRelajacionPin = A1;
+int alertaPin = 12;
+int velocidad = 0;
+
+// Establecer los umbrales para los valores de LDR de concentración y relajación
+int umbralConcentracion = 1000;
+int umbralRelajacion = 1000;
+
+// Variables para almacenar los valores actuales de LDR
+int concentracion, relajacion;
+
+
+void setup() {
+  pinMode(DIR_PIN_1, OUTPUT);
+  pinMode(DIR_PIN_2, OUTPUT);
+  pinMode(SPEED_PIN, OUTPUT);
+  lcd.begin(16, 2); // Inicializar el LCD de 16x2 caracteres
+  lcd.setCursor(0, 0);
+  lcd.print("Programa iniciado");
+  delay(2000);  // Añado este delay para poder ver el mensaje bien
+  lcd.clear();
+}
+
+void loop() {
+
+// Leer los valores actuales de los sensores de LDR
+  concentracion = analogRead(ldrConcentracionPin);
+  relajacion = analogRead(ldrRelajacionPin);
+ 
+// Calcular la velocidad del motor según los valores de LDR
+  velocidad = calcularVelocidad();
+ 
+  
+  // Comprobar si el usuario está en estado de alerta
+  if ((concentracion > umbralConcentracion && relajacion > umbralRelajacion)) {
+    // Detener el motor y activar la alerta
+    detenerMotor();
+  } else {
+  // Ajustar la velocidad del motor
+  ajustarVelocidadMotor(velocidad); 
+ 
+}
+  
+
+  // Esperar un breve tiempo antes de volver a leer los valores de LDR
+  delay(100);
+  
+  
+  // Leer el valor de la fotocélula
+  
+  
+  // Mapear el valor de la fotocélula a una velocidad para el motor
+  analogWrite(SPEED_PIN, velocidad);
+  lcd.setCursor(0, 0);	
+  lcd.print("concentra: ");
+  lcd.print(concentracion);
+  lcd.setCursor(0, 1);
+  lcd.print("relaja: ");
+  lcd.print(relajacion);
+  delay(2000); 
+  lcd.clear();
+  // Cambiar la dirección del motor
+  if (concentracion > 400) {
+    digitalWrite(DIR_PIN_1, HIGH);
+    digitalWrite(DIR_PIN_2, LOW);
+    lcd.setCursor(0, 1);
+    lcd.print("adelante");
+  } 
+    else {if (relajacion > 400){
+    digitalWrite(DIR_PIN_1, LOW);
+    digitalWrite(DIR_PIN_2, HIGH);
+    lcd.setCursor(0, 1);
+    lcd.print("atras");
+    } 
+   }
+
+  delay(1000); // Pequeña pausa para evitar sobrecargar la pantalla LCD
+  lcd.clear(); // Limpiar la pantalla LCD antes de la siguiente lectura
+
+}
+// Función para calcular la velocidad del motor según los valores de LDR
+int calcularVelocidad() {
+  return map(2 * concentracion + relajacion, 0, 300, 0, 255);
+}
+
+// Función para ajustar la velocidad del motor
+void ajustarVelocidadMotor(int velocidad) {
+  digitalWrite(alertaPin, LOW);
+}
+
+// Función para detener el motor
+void detenerMotor() {
+  digitalWrite(DIR_PIN_1,0);
+  digitalWrite(DIR_PIN_2,0);
+  velocidad=0;
+  lcd.setCursor(0, 0);	
+  lcd.print("concen. maxima");
+  lcd.setCursor(0, 1);
+  lcd.print("relax");
+  digitalWrite(alertaPin, HIGH);
+  delay(3000);
+}
+
